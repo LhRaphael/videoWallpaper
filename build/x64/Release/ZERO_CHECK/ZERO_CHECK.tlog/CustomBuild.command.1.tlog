@@ -1,0 +1,10 @@
+^C:\USERS\RAFAEL\DOWNLOADS\VIDEOWALLPAPER\VIDEOWALLPAPER\BUILD\CMAKEFILES\8A91CFCD2EE33CF1DF4AF19DD3CBC5DF\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/rafael/Downloads/VideoWallpaper/VideoWallpaper -BC:/Users/rafael/Downloads/VideoWallpaper/VideoWallpaper/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/rafael/Downloads/VideoWallpaper/VideoWallpaper/build/VideoWallpaper.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
