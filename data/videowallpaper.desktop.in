@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Video Wallpaper
+GenericName=Papel de parede em vídeo
+Comment=Exibe um vídeo em loop como papel de parede da área de trabalho
+Exec=@BINDIR@/videowallpaper
+Icon=videowallpaper
+Terminal=false
+Categories=AudioVideo;Video;GTK;
+Keywords=wallpaper;video;background;papel de parede;fundo;
+StartupNotify=true
+StartupWMClass=videowallpaper

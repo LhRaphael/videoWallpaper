@@ -1,151 +1,171 @@
-# Video Wallpaper
+# Video Wallpaper (Linux)
 
-Aplicativo para Windows, escrito em **C puro**, que exibe um vídeo em loop como
-papel de parede da área de trabalho, **atrás dos ícones**. A interface gráfica
-usa Win32 nativo, e não há nenhuma dependência externa: decodificação pelo
-Media Foundation do próprio Windows e desenho via Direct3D 11.
+Versão Linux do Video Wallpaper: exibe um vídeo em loop como papel de parede,
+**atrás de todas as janelas**, com painel de controle gráfico. Escrito em C,
+usando GTK 3 na interface, libmpv para decodificar (com aceleração por hardware)
+e OpenGL para desenhar.
 
 ## Recursos
 
-- Escolher um vídeo pelo botão **Procurar...** ou arrastando o arquivo para a janela
-- Loop contínuo, com decodificação por hardware (GPU)
-- Suporte a vários monitores: o vídeo aparece em cada tela, ajustado a ela
-- Três modos de ajuste: **Preencher** (corta as bordas), **Ajustar** (barras pretas)
-  e **Tamanho original** (centralizado)
-- Som opcional (começa mudo), com controle de volume
-- Pausa automática quando há um jogo/app em tela cheia (e, opcionalmente,
-  quando a janela em foco está maximizada), para economizar GPU
-- Ícone na bandeja do sistema: pausar, parar e sair
-- Iniciar junto com o Windows e retomar o último vídeo
-- Interface nítida em qualquer escala (DPI por monitor)
-- Ao parar ou sair, o papel de parede original volta sozinho
+- Escolher o vídeo pelo botão **Procurar...** ou arrastando o arquivo para a janela
+- Loop contínuo, com decodificação na GPU quando disponível (VA-API, VDPAU, NVDEC)
+- Vários monitores, com suporte a conectar e desconectar telas com o app aberto
+- Três modos de ajuste: **Preencher** (corta as bordas), **Ajustar** (barras
+  pretas) e **Tamanho original** (centralizado)
+- Som opcional (começa mudo), com volume
+- Pausa automática quando um jogo/app está em tela cheia, ou quando a janela em
+  foco está maximizada (só no X11; veja abaixo)
+- Ícone na bandeja do sistema (AppIndicator), com pausar, parar e sair
+- Iniciar junto com a sessão e retomar o último vídeo
+- Instância única: abrir o app de novo só traz o painel de volta
+- Cliques atravessam o vídeo: o menu da área de trabalho continua funcionando
 
-## Requisitos
+## Compatibilidade
 
-- Windows 10 ou 11 (32 ou 64 bits)
-- Formatos: **MP4/MOV com H.264** funcionam em qualquer Windows. Para HEVC
-  (H.265), VP9/WebM ou AV1, instale a extensão de vídeo correspondente da
-  Microsoft Store. Nas edições "N" do Windows é preciso instalar o
-  *Media Feature Pack*.
+| Ambiente | Como funciona | Situação |
+|---|---|---|
+| **X11** (XFCE, Cinnamon, MATE, KDE X11, GNOME X11, i3, Openbox...) | janela `_NET_WM_WINDOW_TYPE_DESKTOP` sempre abaixo | ✅ |
+| **Wayland com layer-shell** (KDE Plasma, Sway, Hyprland, river, Wayfire, labwc, COSMIC) | superfície `wlr-layer-shell` na camada BOTTOM | ✅ |
+| **GNOME no Wayland** | o GNOME não implementa layer-shell; o app se reinicia sozinho pelo **XWayland** | ⚠️ funciona como no X11 |
 
-## Como compilar
+**Ícones da área de trabalho:** em ambientes que desenham ícones no fundo (XFCE,
+Cinnamon/Nemo, KDE, GNOME com a extensão de ícones), o vídeo pode ficar por
+cima dos ícones. Os cliques ainda passam para a área de trabalho. É a mesma
+limitação de outros apps de papel de parede animado no Linux.
 
-### Opção 1: MinGW-w64 (recomendado, gratuito)
+**Pausa automática no Wayland:** o Wayland não informa a outros aplicativos
+qual janela está em tela cheia, então essas opções ficam desativadas lá.
 
-Com o [MSYS2](https://www.msys2.org/), abra o terminal **UCRT64** e rode:
+## Compilação
 
-```sh
-pacman -S --needed mingw-w64-ucrt-x86_64-gcc make
-cd /c/caminho/para/VideoWallpaper
-make
-```
+### 1. Instale as dependências
 
-Se você usa w64devkit/WinLibs no `cmd`, basta rodar `build_mingw.bat`.
-
-### Opção 2: Visual Studio
-
-Abra o **x64 Native Tools Command Prompt for VS** na pasta do projeto e rode:
-
-```bat
-build_msvc.bat
-```
-
-### Opção 3: CMake
+O próprio script mostra o comando certo para a sua distro:
 
 ```sh
-cmake -S . -B build
-cmake --build build --config Release
+./build.sh deps
 ```
 
-### Cross-compile a partir do Linux
+| Distro | Comando |
+|---|---|
+| Ubuntu / Debian / Mint / Pop!_OS | `sudo apt install build-essential pkg-config libgtk-3-dev libmpv-dev libepoxy-dev libx11-dev libgtk-layer-shell-dev libayatana-appindicator3-dev` |
+| Fedora | `sudo dnf install gcc pkgconf-pkg-config gtk3-devel mpv-devel libepoxy-devel libX11-devel gtk-layer-shell-devel libayatana-appindicator-gtk3-devel` |
+| Arch / Manjaro / EndeavourOS | `sudo pacman -S --needed base-devel pkgconf gtk3 mpv libepoxy libx11 gtk-layer-shell libayatana-appindicator` |
+| openSUSE | `sudo zypper install gcc pkg-config gtk3-devel mpv-devel libepoxy-devel libX11-devel gtk-layer-shell-devel libayatana-appindicator3-devel` |
+
+`gtk-layer-shell` e `libayatana-appindicator3` são opcionais. Sem eles, o script
+compila mesmo assim, sem Wayland nativo e sem ícone na bandeja.
+
+### 2. Compile e execute
 
 ```sh
-sudo apt install mingw-w64
-make CROSS=x86_64-w64-mingw32-
+chmod +x build.sh
+./build.sh          # gera build/videowallpaper
+./build.sh run      # compila e executa
 ```
 
-## Como usar
+### 3. (Opcional) Instale no menu de aplicativos
 
-1. Abra `VideoWallpaper.exe`.
-2. Clique em **Procurar...** e escolha um vídeo, ou arraste o arquivo para a janela.
-   O vídeo já começa a tocar na área de trabalho.
-3. Use **Pausar**, **Parar**, o modo de ajuste e o volume como quiser.
-4. Ao fechar a janela, o app continua rodando na bandeja (dá para mudar nas opções).
-   Para encerrar de vez: clique com o botão direito no ícone da bandeja e escolha **Sair**.
+```sh
+./build.sh install      # em ~/.local, sem sudo
+./build.sh uninstall    # remove
+```
 
-Parâmetros de linha de comando:
+Para instalar para todos os usuários: `sudo ./build.sh --prefix=/usr/local install`.
 
-| Parâmetro   | Efeito                                                                   |
-|-------------|--------------------------------------------------------------------------|
-| `/tray`     | Inicia escondido na bandeja (usado pela inicialização automática)        |
-| `/windowed` | Depuração: mostra o vídeo numa janela comum em vez da área de trabalho    |
+### Todas as opções do script
 
-As configurações ficam em `%APPDATA%\VideoWallpaper\config.ini`. A inicialização
-automática usa `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, sem
-precisar de administrador.
+| Comando | Efeito |
+|---|---|
+| `./build.sh` | compila em modo release (`-O2`) |
+| `./build.sh debug` | compila com símbolos de depuração (`-O0 -g3`) |
+| `./build.sh run [args]` | compila e executa |
+| `./build.sh install` / `uninstall` | instala ou remove em `~/.local` (ou `--prefix=DIR`) |
+| `./build.sh deps` | mostra o comando de dependências da sua distro |
+| `./build.sh clean` | apaga `build/` |
+| `--no-layer-shell` / `--no-tray` | desliga os recursos opcionais |
+| `CC=clang`, `CFLAGS=...`, `LDFLAGS=...` | compilador e flags extras |
+
+## Uso
+
+1. Abra o **Video Wallpaper** (pelo menu ou com `./build/videowallpaper`).
+2. Clique em **Procurar...** e escolha o vídeo, ou arraste o arquivo para a janela.
+   Ele começa a tocar no fundo na hora.
+3. Ao fechar a janela, o vídeo continua rodando. Para reabrir o painel, abra o
+   app de novo ou use o ícone da bandeja. Para encerrar: **Sair** no ícone da
+   bandeja, ou desmarque "continuar rodando em segundo plano" e feche.
+
+Linha de comando:
+
+| Opção | Efeito |
+|---|---|
+| `--hidden` | inicia sem mostrar o painel (usado pelo autostart) |
+| `--windowed` | depuração: vídeo numa janela comum em vez do fundo |
+| `--version` | mostra a versão |
+
+Variáveis de ambiente para diagnóstico:
+
+| Variável | Efeito |
+|---|---|
+| `VW_DEBUG=1` | log detalhado do mpv no terminal |
+| `VW_HWDEC=no` | desliga a decodificação por hardware |
+| `VW_LAYER=background` | Wayland: usa a camada de fundo em vez da BOTTOM |
+| `VW_NO_REEXEC=1` | não reinicia pelo XWayland quando não há layer-shell |
+
+Arquivos:
+
+- configurações: `~/.config/videowallpaper/config.ini`
+- autostart: `~/.config/autostart/videowallpaper.desktop` (padrão XDG,
+  funciona em todos os ambientes)
 
 ## Como funciona
 
 ```
  arquivo de vídeo
-       │  MFCreateFile (byte stream)
+       │  libmpv (FFmpeg + VA-API/VDPAU/NVDEC, loop-file=inf)
        ▼
- Media Foundation Media Engine ──── decodificação na GPU, loop nativo
-       │  TransferVideoFrame (um recorte por monitor)
+ API de render OpenGL do mpv ──── um reprodutor por monitor
+       │  desenha no framebuffer de um GtkGLArea
        ▼
- Swap chain DXGI (Direct3D 11) ──── do tamanho da área de trabalho virtual
-       │  Present
-       ▼
- janela filha atrás dos ícones ──── técnica "WorkerW"
+ janela de fundo por monitor
+   ├─ X11:     _NET_WM_WINDOW_TYPE_DESKTOP + BELOW + sticky + entrada vazia
+   └─ Wayland: gtk-layer-shell, camada BOTTOM, ancorada nas 4 bordas
 ```
-
-**Atrás dos ícones.** A janela da área de trabalho (`Progman`) recebe a
-mensagem não documentada `0x052C`, que faz o Explorer separar a camada do
-papel de parede numa janela `WorkerW`. O app encaixa a própria janela ali.
-O Windows 11 24H2 mudou essa estrutura (o chamado *raised desktop*), e o
-código trata os dois casos:
-
-| | Windows 10 / 11 até 23H2 | Windows 11 24H2+ |
-|---|---|---|
-| Pai da nossa janela | WorkerW de nível superior | `Progman` |
-| Posição | topo do WorkerW | logo abaixo de `SHELLDLL_DefView` (ícones) |
-| Estilo | janela filha comum | filha `WS_EX_LAYERED` com alfa 255 |
-| Apresentação | modelo *flip* | modelo *blt* (recomendação da Microsoft) |
-
-**Uma thread só para o vídeo.** Todo o pipeline (janela, Direct3D e Media
-Engine) roda numa thread dedicada, sincronizada ao *vblank* do monitor. Por
-isso o vídeo não trava quando a interface abre um diálogo ou é arrastada. A
-interface manda comandos por mensagens e recebe o estado de volta.
-
-**Robustez.** A cada 2 segundos o app confere se continua encaixado. Se o
-Explorer reiniciar ou reorganizar as janelas, ele se reencaixa sozinho. A
-perda do dispositivo gráfico (troca de driver, por exemplo) recria tudo e
-retoma do mesmo ponto do vídeo.
-
-### Arquivos
 
 | Arquivo | Conteúdo |
 |---|---|
-| `src/main.c` | Ponto de entrada, instância única, laço de mensagens |
-| `src/gui.c` | Painel de controle, bandeja, pausa automática |
-| `src/engine.c` | Thread de vídeo: Media Engine + Direct3D 11 + desenho |
-| `src/wallpaper.c` | Encaixe atrás dos ícones (WorkerW / 24H2) e geometria dos monitores |
-| `src/config.c` | Configurações (INI Unicode) e inicialização automática |
-| `src/mediaengine_c.h` | Interfaces COM do Media Engine declaradas em C (o MinGW não traz `mfmediaengine.h`) |
-| `src/debuglog.h` | Log opcional de diagnóstico |
-| `res/` | Ícone, manifesto (DPI, estilos visuais) e recurso de versão |
+| `src/main.c` | GtkApplication (instância única), opções e fallback para XWayland |
+| `src/gui.c` | Painel de controle, bandeja e pausa automática (EWMH no X11) |
+| `src/wallpaper.c` | Uma superfície de fundo por monitor (X11 / layer-shell) e hotplug |
+| `src/player.c` | libmpv + GtkGLArea, eventos e controle do reprodutor |
+| `src/config.c` | Configurações (GKeyFile) e autostart XDG |
+| `build.sh` | Compilação, verificação de dependências, instalação |
+
+**Decisões de projeto:**
+
+- **Só API assíncrona da libmpv depois de iniciar.** A thread do GTK também é
+  a thread de render do mpv. Uma chamada síncrona (`mpv_command`,
+  `mpv_set_property`) feita dela pode travar o programa: o núcleo do mpv
+  espera o render, e o render espera a chamada.
+- **Camada BOTTOM no Wayland.** Fica acima do papel de parede do próprio
+  sistema (swaybg, hyprpaper, desktop do Plasma), que também ocupa a camada
+  BACKGROUND, e abaixo de janelas e painéis.
+- **O `wl_display` não é passado ao mpv.** A libva-wayland depende do protocolo
+  `wl_drm`, que compositores recentes não oferecem, e pode derrubar o processo.
+  Sem ele, o mpv usa a VA-API direto pelo `/dev/dri/renderD*`.
+- **Perfil `fast` do mpv.** Escala bilinear e menos etapas de pós-processamento:
+  num papel de parede, que fica rodando o tempo todo, economia de GPU vale mais
+  que qualidade máxima de escala.
 
 ## Solução de problemas
 
-- **O painel diz "Reproduzindo", mas o papel de parede não muda:** feche e
-  abra o app de novo, ou reinicie o Explorer (Gerenciador de Tarefas →
-  "Windows Explorer" → Reiniciar). Para isolar o problema, rode
-  `VideoWallpaper.exe /windowed`: se o vídeo aparecer na janela de teste, o
-  pipeline de vídeo está ok e a questão é o encaixe na área de trabalho.
-- **Gerar um log:** compile com `make DEBUG=1`, `build_mingw.bat debug`
-  ou `build_msvc.bat debug`. O log vai para `%TEMP%\videowallpaper_debug.log`
-  e mostra o layout detectado (clássico ou 24H2), a swap chain criada e os erros.
-- **"Formato ou codec não suportado":** converta para MP4/H.264, por exemplo:
-  `ffmpeg -i entrada.mkv -c:v libx264 -crf 20 -an saida.mp4`
-- **O SmartScreen avisa ao abrir:** é normal para um executável sem
-  assinatura digital. Use "Mais informações → Executar assim mesmo".
+- **Nada aparece no fundo:** rode com `--windowed`. Se o vídeo tocar na janela
+  de teste, o problema está no encaixe no fundo do seu ambiente. Rode no
+  terminal e veja a linha "Modo:" no rodapé do painel.
+- **Uso alto de CPU:** a decodificação por hardware não está ativa. Rode com
+  `VW_DEBUG=1` e procure as linhas `hwdec`. Instale o driver VA-API da sua GPU:
+  `intel-media-va-driver` / `mesa-va-drivers` / `nvidia-vaapi-driver`.
+- **Sway/Hyprland: o vídeo ficou por cima de uma dock:** use
+  `VW_LAYER=background` e desative o swaybg/hyprpaper.
+- **Sem ícone na bandeja no GNOME:** instale a extensão "AppIndicator and
+  KStatusNotifierItem Support" (o Ubuntu já traz).
