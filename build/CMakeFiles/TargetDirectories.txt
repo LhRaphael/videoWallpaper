@@ -1,3 +1,0 @@
-C:/Users/rafael/Downloads/VideoWallpaper/VideoWallpaper/build/CMakeFiles/VideoWallpaper.dir
-C:/Users/rafael/Downloads/VideoWallpaper/VideoWallpaper/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/rafael/Downloads/VideoWallpaper/VideoWallpaper/build/CMakeFiles/ZERO_CHECK.dir
